@@ -1,0 +1,4 @@
+CREATE TABLE "GCG_3549_Job_Scrap"(
+ "Workcenter" VARCHAR(100),
+ "Scrap" INTEGER,
+ "ID" IDENTITY);
