@@ -1,0 +1,724 @@
+Program.Sub.ScreenSU.Start
+gui.frmEA..create
+gui.frmEA..caption("Estimate - Actual")
+gui.frmEA..size(3555,2430)
+gui.frmEA..minx(0)
+gui.frmEA..miny(0)
+gui.frmEA..position(0,0)
+gui.frmEA..event(unload,Unload)
+gui.frmEA..alwaysontop(False)
+gui.frmEA..fontname("Arial")
+gui.frmEA..fontsize(8)
+gui.frmEA..forecolor(0)
+gui.frmEA..fontstyle(,,,,)
+gui.frmEA..BackColor(-2147483633)
+gui.frmEA..controlbox(True)
+gui.frmEA..maxbutton(False)
+gui.frmEA..minbutton(False)
+gui.frmEA..mousepointer(0)
+gui.frmEA..moveable(True)
+gui.frmEA..sizeable(False)
+gui.frmEA..ShowInTaskBar(True)
+gui.frmEA..titlebar(True)
+gui.frmEA.lbl1.create(label,"Part :",True,840,255,1,110,170,True,0,Arial,8,-2147483633,0)
+gui.frmEA.lbl1.defaultvalue("")
+gui.frmEA.lbl1.controlgroup(0)
+gui.frmEA.lbl2.create(label,"Dt From :",True,735,255,1,110,560,True,0,Arial,8,-2147483633,0)
+gui.frmEA.lbl2.defaultvalue("")
+gui.frmEA.lbl2.controlgroup(0)
+gui.frmEA.lbl3.create(label,"Dt To :",True,660,240,1,110,920,True,0,Arial,8,-2147483633,0)
+gui.frmEA.lbl3.defaultvalue("")
+gui.frmEA.lbl3.controlgroup(0)
+gui.frmEA.cmdProcess.create(button)
+gui.frmEA.cmdProcess.caption("Process")
+gui.frmEA.cmdProcess.visible(True)
+gui.frmEA.cmdProcess.size(825,375)
+gui.frmEA.cmdProcess.zorder(0)
+gui.frmEA.cmdProcess.position(80,1395)
+gui.frmEA.cmdProcess.enabled(True)
+gui.frmEA.cmdProcess.fontname("Arial")
+gui.frmEA.cmdProcess.fontsize(8)
+gui.frmEA.cmdProcess.event(click,cmdprocess_click)
+gui.frmEA.cmdProcess.defaultvalue("")
+gui.frmEA.cmdProcess.controlgroup(0)
+gui.frmEA.txtPart.create(textbox,"",True,1410,300,0,935,145,True,0,Arial,8,-2147483643,1)
+gui.frmEA.txtPart.defaultvalue("")
+gui.frmEA.txtPart.controlgroup(0)
+gui.frmEA.dtfrom.create(datepicker)
+gui.frmEA.dtfrom.visible(True)
+gui.frmEA.dtfrom.size(1410,285)
+gui.frmEA.dtfrom.zorder(0)
+gui.frmEA.dtfrom.position(935,545)
+gui.frmEA.dtfrom.enabled(True)
+gui.frmEA.dtfrom.checkbox(False)
+gui.frmEA.dtfrom.defaultvalue("")
+gui.frmEA.dtfrom.controlgroup(0)
+gui.frmEA.dtTo.create(datepicker)
+gui.frmEA.dtTo.visible(True)
+gui.frmEA.dtTo.size(1410,285)
+gui.frmEA.dtTo.zorder(0)
+gui.frmEA.dtTo.position(935,890)
+gui.frmEA.dtTo.enabled(True)
+gui.frmEA.dtTo.checkbox(False)
+gui.frmEA.dtTo.defaultvalue("")
+gui.frmEA.dtTo.controlgroup(0)
+gui.frmEA.cmdBrowse.create(button)
+gui.frmEA.cmdBrowse.caption("^")
+gui.frmEA.cmdBrowse.visible(True)
+gui.frmEA.cmdBrowse.size(360,315)
+gui.frmEA.cmdBrowse.zorder(0)
+gui.frmEA.cmdBrowse.position(2400,130)
+gui.frmEA.cmdBrowse.enabled(True)
+gui.frmEA.cmdBrowse.fontname("Arial")
+gui.frmEA.cmdBrowse.fontsize(8)
+gui.frmEA.cmdBrowse.event(click,cmdbrowse_click)
+gui.frmEA.cmdBrowse.defaultvalue("")
+gui.frmEA.cmdBrowse.controlgroup(0)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+
+' RAN 01/15/2016
+' Project Name: - Quote 7369-1 - Work Order Estimate vs Actual
+' Penz Products, Inc
+
+F.Intrinsic.Control.Try
+	F.ODBC.Connection!conx.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass,10000)
+	
+	Gui.frmEA..Show
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(CatchError, "Sub", V.Ambient.CurrentSubroutine, "Error", V.Ambient.ErrorNumber, "ErrorDescription", V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.BuildBOM.Start
+F.Intrinsic.Control.Try
+	V.Local.sSQL.Declare(String)
+	V.Local.sFilePath.Declare(String)
+	V.Local.sFile.Declare(String)
+	V.Local.sPartFile.Declare(String)
+	V.Local.iLoop.Declare(Long)
+	V.Local.sRet.Declare(String)
+	V.Local.iC.Declare(Long)
+	
+	V.Local.sParent.Declare(String)
+	V.Local.sWcenter.Declare(String)
+	V.Local.fDEstimated.Declare(Float)
+	V.Local.fDActual.Declare(Float)
+	V.Local.fHEstimated.Declare(Float)
+	V.Local.fHActual.Declare(Float)
+	V.Local.lScrap.Declare(Long)
+	V.Local.lGood.Declare(Long)
+	V.Local.sGoodBad.Declare(String)
+	
+	V.Local.fEstCost.Declare(Float)
+	V.Local.fActCost.Declare(Float)
+	V.Local.bRet.Declare(Boolean)
+	V.Local.fCost.Declare(Float)
+	V.Local.sTemp.Declare(String)
+	
+	V.Local.dfromdt.Declare(Date)
+	V.Local.dtodt.Declare(Date)
+	V.Local.sValues.Declare(String)
+	V.Local.sParams.Declare(String)
+	V.Local.iRet.Declare(Long)
+	V.local.iBiRunID.declare(Long)
+	V.local.iBILogID.declare(Long)
+	V.Local.fHTemp.Declare(Float)
+	V.local.iLnRun.declare(Long)
+	V.local.iLnRate.Declare(Float)
+	V.Local.sPLine.Declare(String)
+	V.Local.bFsetup.Declare(Boolean)
+	V.local.iLnTotRunQty.declare(Long)
+	V.Local.iLnTempRunQty.declare(Long)
+	V.Local.sLMO.Declare(String)
+	V.Local.sDesc.Declare(String)
+	V.Local.iValue.Declare(Long)
+	V.Local.bPaint.Declare(Boolean)
+	
+	'Below variables are used for the troubleshooting table so that .psqlfriendly transforms can be performed on the recordset values
+	V.Local.sJobPartRST.Declare(String)
+	V.Local.sWorkcenterRST.Declare(String)
+	V.Local.sSeqRST.Declare(String)
+	V.Local.sLMORST.Declare(String)
+	V.Local.sProductLineRST.Declare(String)
+	V.Local.sQtyOrderRST.Declare(String)
+	V.Local.sOPPartRST.Declare(String)
+	V.Local.sJobRST.Declare(String)
+	V.Local.sUnitsScrapRST.Declare(String)
+	V.Local.sHoursEstimatedRST.Declare(String)
+	V.Local.sHoursActualRST.Declare(String)
+	V.Local.sDollarsEstimatedRST.Declare(String)
+	V.Local.sDollarsActualRST.Declare(String)
+	V.Local.sOpStartDateRST.Declare(String)
+	V.Local.sHeadStartDateRST.Declare(String)
+	V.Local.sRouterRST.Declare(String)
+	V.Local.sRouterSeqRST.Declare(String)
+	V.Local.sFlagSetupRST.Declare(String)
+	
+	F.ODBC.Connection!conX.Execute("DELETE FROM GCG_3549_Tbl2")
+	F.ODBC.Connection!conX.Execute("DELETE FROM GCG_3549_Job_EstAct")
+	F.ODBC.Connection!conX.Execute("DELETE FROM GCG_3549_Job_Scrap")
+	
+	F.Data.DataTable.CreateFromSQL("ReportTable","conX","SELECT * FROM GCG_3549_Job_EstAct",True)
+	F.Data.DataTable.CreateFromSQL("ScrapTable","conX","SELECT * FROM GCG_3549_Job_Scrap",True)
+	
+	F.Intrinsic.String.Trim(V.Screen.frmEA!txtPart.Text,V.Local.sParent)
+	
+	V.Local.dfromdt.Set(V.Screen.frmEA!dtfrom.Value)
+	V.Local.dtodt.Set(V.Screen.frmEA!dtTO.Value)
+	
+	F.Intrinsic.Control.If(V.Ambient.IsInIDE)
+		F.Global.BI.StartLogging(V.local.iBiRunID,100005,0,"",V.local.iBILogID)
+	F.Intrinsic.Control.Else
+	       F.Global.BI.StartLogging(V.local.iBiRunID,-1,-1,"",V.local.iBILogID)
+	F.Intrinsic.Control.EndIf
+	
+	F.Intrinsic.String.Concat(V.System.Temp,"\EXPLODEBOM",V.Caller.Terminal,".txt",V.Local.sFilePath)
+	F.Intrinsic.String.Build("0{0}{1}{0}{2}",V.Ambient.Tab,V.Local.sParent,V.Local.sFilePath,V.Local.sFile)
+	
+	F.Intrinsic.UI.ChangeWaitStatus("Exploding BOM")
+	
+	F.Intrinsic.File.String2File(V.Local.sFilePath,V.Local.sFile)
+	F.Global.General.CallWrapperSync(410000,V.Local.sFilePath)
+	f.Intrinsic.File.File2StringArray(v.Local.sFilePath,v.Ambient.Tab,v.Local.sFile)
+	
+	F.Intrinsic.File.GetFileNameFromFQN(V.Local.sFile(3),V.Local.sFile.Trim)
+	
+	F.Intrinsic.String.Split(V.Local.sFile," ",V.Local.sFile)
+	F.Intrinsic.String.Concat(V.System.Temp,"\",V.Local.sFile(0).Trim,V.Local.sFilePath.Trim)
+	F.Intrinsic.File.File2String(V.Local.sFilePath,V.Local.sPartFile)
+	F.Intrinsic.String.Split(V.Local.sPartFile,V.Ambient.NewLine,V.Local.sPartFile)
+	F.Intrinsic.Math.Sub(V.Local.sPartFile.UBound,1,V.Local.iLoop)
+	
+	F.Intrinsic.Control.For(V.Local.iC,7,V.Local.iLoop,1)
+	
+		F.Intrinsic.UI.ChangeWaitStatus("Calculating Values",V.Local.iC,7,V.Local.iLoop)
+		
+		F.Intrinsic.String.Split(V.Local.sPartFile(v.Local.iC),"|~|",V.Local.sRet)
+		
+		'Adds the "header" row in the report - this is the row that has the parent and component value.
+		'If the row count is 0 then we are on the parent level, otherwise we get the values from the bom file
+		F.Intrinsic.Control.If(V.DataTable.ReportTable.RowCount,=,0)
+			F.Data.DataTable.AddRow("ReportTable","Level","Parent","Component",V.Local.sParent)
+		F.Intrinsic.Control.Else
+			F.Data.DataTable.AddRow("ReportTable","Level",V.Local.sRet(1),"Component",V.Local.sRet(2))			
+		F.Intrinsic.Control.EndIf
+	
+		F.Intrinsic.String.Build("SELECT Run_Time FROM V_Router_Line WHERE LMO ='M' AND LTRIM(Router) = '{0}' AND LTRIM(Part_WC_Outside) = '{1}'",V.Local.sRet(12).trim,V.Local.sRet(2).trim,V.Local.sSQL)
+		F.ODBC.Connection!conX.OpenLocalRecordsetRO("rstRou",V.Local.sSQL)
+		
+		F.Intrinsic.Control.If(V.ODBC.conX!rstRou.EOF,=,False)
+			F.Intrinsic.Control.CallSub(Getmatdata,"OPart",V.Local.sRet(2).trim,"lQty",V.Local.sRet(6))
+		F.Intrinsic.Control.EndIf
+		F.ODBC.conx!rstRou.Close
+	
+		V.local.iLnTotRunQty.Set(0)
+		F.Intrinsic.String.Build("SELECT SUM(Qty_Completed) AS Good FROM V_Job_Header WHERE Date_Closed >= '{0}' AND Date_Closed <= '{1}' AND Part = '{2}'",V.Local.dfromdt.PervasiveDate,V.Local.dtodt.PervasiveDate,V.Local.sRet(2).trim,V.Local.sSQL)
+		F.ODBC.Connection!conX.OpenLocalRecordsetRO("rst",V.Local.sSQL)
+		
+		F.Intrinsic.Control.If(V.ODBC.conX!rst.EOF,=,False)
+			'If we're on the first row then we're on the parent row, so we store the good value to be passed to the report here
+			F.Intrinsic.Control.If(V.DataTable.ReportTable.RowCount,=,1)
+				V.Local.lGood.Set(V.ODBC.conx!rst.FieldVal!Good)
+			F.Intrinsic.Control.EndIf
+	
+			V.local.iLnTotRunQty.set(V.ODBC.conx!rst.FieldVal!Good)
+			
+		F.Intrinsic.Control.EndIf	
+		F.ODBC.conx!rst.Close
+	
+		V.Local.sSQL.set("SELECT JH.part AS JobPart, JO.Description AS Workcenter, Seq, LMO, Product_Line, Qty_Order, JO.part AS OPPart, JH.Job, Units_Scrap, Hours_Estimated, Hours_Actual,Dollars_Estimated, Dollars_Actual, JO.Date_Start AS OpStartDate, JH.Date_Start As HeadStartDate, JH.Router, Router_Seq, JO.Flag_Set_Up AS Flag_Setup FROM V_Job_Operations JO INNER JOIN V_Job_Header JH ON JH.job = JO.job AND JH.Suffix = JO.Suffix")
+		F.Intrinsic.String.Build("{0} WHERE LMO <> 'M' AND LMO <> 'C' AND JO.seq < 995000 AND JO.date_start >= '{1}' AND JO.date_start <= '{2}' AND JobPart = '{3}' ORDER BY Workcenter, Seq",V.Local.sSQL,V.Local.dfromdt.PervasiveDate,V.Local.dtodt.PervasiveDate,V.Local.sRet(2).trim,V.Local.sSQL)
+		
+		F.ODBC.Connection!conX.OpenLocalRecordsetRO("rstOP",V.Local.sSQL)
+		
+		'Loop explanation: For each BOM component we find all job details in the date range specified by the user. The details are ordered by "Workcenter" which is the job detail description.
+		'The loop goes through the workcenters with the aim to combine data for each workcenter description into a single record on the ReportTable. It accomplishes this by looping through the 
+		'recordset and checking to see if the current record has a different workcenter than the previous record. If it does then the information for the PREVIOUS record is written to the data table.
+		'Otherwise, data is calculated for the existing record and we move onto the next recordset record. After the loop there is one more record addition due to the last record calculated not being written
+		'to the table in the loop.
+		F.Intrinsic.Control.DoUntil(V.ODBC.conX!rstOP.EOF)
+			
+			'This table stores the job details that were retrieved. It's extremely useful for debugging purposes - just uncomment the lines if needed
+'			V.Local.sJobPartRST.Set(V.ODBC.conx!rstOP.FieldVal!JobPart)
+'			V.Local.sWorkcenterRST.Set(V.ODBC.conx!rstOP.FieldVal!Workcenter)
+'			V.Local.sSeqRST.Set(V.ODBC.conx!rstOP.FieldVal!Seq)
+'			V.Local.sLMORST.Set(V.ODBC.conx!rstOP.FieldVal!LMO)
+'			V.Local.sProductLineRST.Set(V.ODBC.conx!rstOP.FieldVal!Product_Line)
+'			V.Local.sQtyOrderRST.Set(V.ODBC.conx!rstOP.FieldVal!Qty_Order)
+'			V.Local.sOPPartRST.Set(V.ODBC.conx!rstOP.FieldVal!OPPart)
+'			V.Local.sJobRST.Set(V.ODBC.conx!rstOP.FieldVal!Job)
+'			V.Local.sUnitsScrapRST.Set(V.ODBC.conx!rstOP.FieldVal!Units_Scrap)
+'			V.Local.sHoursEstimatedRST.Set(V.ODBC.conx!rstOP.FieldVal!Hours_Estimated)
+'			V.Local.sHoursActualRST.Set(V.ODBC.conx!rstOP.FieldVal!Hours_Actual)
+'			V.Local.sDollarsEstimatedRST.Set(V.ODBC.conx!rstOP.FieldVal!Dollars_Estimated)
+'			V.Local.sDollarsActualRST.Set(V.ODBC.conx!rstOP.FieldVal!Dollars_Actual)
+'			V.Local.sOpStartDateRST.Set(V.ODBC.conx!rstOP.FieldValPervasiveDate!OpStartDate)
+'			V.Local.sHeadStartDateRST.Set(V.ODBC.conx!rstOP.FieldValPervasiveDate!HeadStartDate)
+'			V.Local.sRouterRST.Set(V.ODBC.conx!rstOP.FieldVal!Router)
+'			V.Local.sRouterSeqRST.Set(V.ODBC.conx!rstOP.FieldVal!Router_Seq)
+'			V.Local.sFlagSetupRST.Set(V.ODBC.conx!rstOP.FieldVal!Flag_Setup)
+'			F.Intrinsic.String.Build("INSERT INTO GCG_3549_Tbl2 VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}',",V.Local.sJobPartRST.PSQLFriendly,V.Local.sWorkcenterRST.PSQLFriendly,V.Local.sSeqRST.PSQLFriendly,V.Local.sLMORST.PSQLFriendly,V.Local.sProductLineRST.PSQLFriendly,V.Local.sQtyOrderRST.PSQLFriendly,V.Local.sSQL)
+'			F.Intrinsic.String.Build("{0} '{1}', '{2}', '{3}', '{4}', '{5}', '{6}',",V.Local.sSQL,V.Local.sOPPartRST.PSQLFriendly,V.Local.sJobRST.PSQLFriendly,V.Local.sUnitsScrapRST.PSQLFriendly,V.Local.sHoursEstimatedRST.PSQLFriendly,V.Local.sHoursActualRST.PSQLFriendly,V.Local.sDollarsEstimatedRST.PSQLFriendly,V.Local.sSQL)
+'			F.Intrinsic.String.Build("{0} '{1}', '{2}', '{3}', '{4}', '{5}', '{6}')",V.Local.sSQL,V.Local.sDollarsActualRST.PSQLFriendly,V.Local.sOpStartDateRST.PSQLFriendly,V.Local.sHeadStartDateRST.PSQLFriendly,V.Local.sRouterRST.PSQLFriendly,V.Local.sRouterSeqRST,V.Local.sFlagSetupRST,V.Local.sSQL)
+'			F.ODBC.Connection!conx.Execute(V.Local.sSQL)
+			
+			'Assigning SCRAP
+			F.Intrinsic.Control.If(V.ODBC.conx!rstOP.FieldVal!Units_Scrap,>,0)
+				F.Data.DataTable.AddRow("ScrapTable","Workcenter",V.Local.sWcenter,"Scrap",V.ODBC.conx!rstOP.FieldVal!Units_Scrap)			
+				F.Intrinsic.Math.Add(V.Local.lScrap,V.ODBC.conx!rstOP.FieldVal!Units_Scrap,V.Local.lScrap)					
+			F.Intrinsic.Control.EndIf
+	
+			F.Intrinsic.Control.If(V.ODBC.conx!rstOP.FieldValtrim!workcenter,<>,V.Local.sWcenter)
+				'sWcenter will be blank on the first time through this so this check for a blank record prevents the record from being written early
+				F.Intrinsic.Control.If(V.Local.sWcenter,<>,"")
+					F.Data.DataTable.AddRow("ReportTable","WCenter",V.Local.sWcenter,"EstHour",V.Local.fHEstimated)
+					
+					F.Intrinsic.Control.If(V.Local.fHActual,>,0)
+						F.Intrinsic.Math.Div(V.Local.fHActual,V.local.iLnRun,V.Local.fHActual)
+						F.Data.DataTable.SetValue("ReportTable",V.DataTable.ReportTable.RowCount--,"ActHour",V.Local.fHActual)
+					F.Intrinsic.Control.EndIf
+					
+					F.Intrinsic.Control.If(V.Local.bFsetup)
+						
+						F.Intrinsic.Control.If(V.Local.bPaint)
+							F.Intrinsic.Math.Mult(V.local.iLnRate,V.Local.fHEstimated,V.Local.fHEstimated)
+							F.Intrinsic.Math.Mult(V.local.iLnRate,V.Local.fHActual,V.Local.fHActual)
+							
+						F.Intrinsic.Control.ElseIf(V.Local.sPLine,=,"SP","OR",V.Local.sPLine,=,"SW")
+							F.Intrinsic.Math.Mult(85,V.Local.fHEstimated,V.Local.fHEstimated)
+							F.Intrinsic.Math.Mult(85,V.Local.fHActual,V.Local.fHActual)
+							
+						F.Intrinsic.Control.Else
+						
+							F.Intrinsic.String.IsInString("PFPWPO",V.Local.sPLine,True,V.Local.bRet)
+							
+							F.Intrinsic.Control.If(V.Local.bRet)
+								F.Intrinsic.Math.Mult(55,V.Local.fHEstimated,V.Local.fHEstimated)
+								F.Intrinsic.Math.Mult(55,V.Local.fHActual,V.Local.fHActual)
+							F.Intrinsic.Control.EndIf
+							
+						F.Intrinsic.Control.EndIf
+						
+					F.Intrinsic.Control.Else
+						
+						F.Intrinsic.Control.If(V.Local.sPLine,=,"SP")
+							F.Intrinsic.Control.If(V.Local.sLMO,=,"O")
+								V.Local.fDEstimated.Set(V.local.iLnRate)
+							F.Intrinsic.Control.Else
+							
+								F.Intrinsic.Control.If(V.Local.bPaint)
+									V.Local.iValue.set(V.local.iLnRate)
+								F.Intrinsic.Control.Else 
+									V.Local.iValue.set(85)
+								F.Intrinsic.Control.EndIf
+								
+								F.Intrinsic.Control.If(V.Local.fHEstimated,>,0)
+									F.Intrinsic.Math.Div(V.Local.iValue,V.Local.fHEstimated,V.Local.fDEstimated)
+									f.Intrinsic.Math.Mult(V.Local.fDEstimated,V.Local.sRet(6).Float,V.Local.fDEstimated)
+								F.Intrinsic.Control.EndIf
+								
+							F.Intrinsic.Control.EndIf
+	
+							F.Intrinsic.Control.If(V.Local.fHActual,>,0)
+								F.Intrinsic.Math.Div(V.Local.iValue,V.Local.fHActual,V.Local.fDActual)
+								f.Intrinsic.Math.Mult(V.Local.fDActual,V.Local.sRet(6).Float,V.Local.fDActual)
+							F.Intrinsic.Control.EndIf
+							
+						F.Intrinsic.Control.Else
+						
+							F.Intrinsic.String.IsInString("PFPWPO",V.Local.sPLine,True,V.Local.bRet)
+							
+							F.Intrinsic.Control.If(V.Local.bPaint)
+								V.Local.iValue.set(V.local.iLnRate)
+							F.Intrinsic.Control.ElseIf(V.Local.bRet)
+								V.Local.iValue.set(55)
+							F.Intrinsic.Control.Else
+							
+								F.Intrinsic.String.IsInString("SFSWSO",V.Local.sPLine,True,V.Local.bRet)
+								
+									F.Intrinsic.Control.If(V.Local.bRet)
+										V.Local.iValue.set(85)
+									F.Intrinsic.Control.EndIf
+									
+							F.Intrinsic.Control.EndIf
+							
+							F.Intrinsic.String.IsInString("PFPWPOSWSF",V.Local.sPLine,True,V.Local.bRet)
+							
+								F.Intrinsic.Control.If(V.Local.bRet)
+									F.Intrinsic.Control.If(V.Local.sLMO,=,"O")										
+										V.Local.fDEstimated.Set(V.local.iLnRate)
+										V.Local.iValue.set(0)
+										
+									F.Intrinsic.Control.Else
+									
+										F.Intrinsic.Control.If(V.Local.fHEstimated,>,0)
+											F.Intrinsic.Math.Div(V.Local.iValue,V.Local.fHEstimated,V.Local.fDEstimated)
+											f.Intrinsic.Math.Mult(V.Local.fDEstimated,V.Local.sRet(6).Float,V.Local.fDEstimated)
+										F.Intrinsic.Control.EndIf
+										
+									F.Intrinsic.Control.EndIf
+	
+									F.Intrinsic.Control.If(V.Local.fHActual,>,0)
+										F.Intrinsic.Math.Div(V.Local.iValue,V.Local.fHActual,V.Local.fDActual)
+										f.Intrinsic.Math.Mult(V.Local.fDActual,V.Local.sRet(6).Float,V.Local.fDActual)
+									F.Intrinsic.Control.EndIf
+									
+								F.Intrinsic.Control.EndIf
+								
+							F.Intrinsic.Control.EndIf
+	
+						F.Intrinsic.Control.EndIf
+	
+						F.Intrinsic.Control.If(V.Local.bFsetup)
+							F.Intrinsic.Control.If(V.Local.iLnRun,>,0)
+								F.Intrinsic.Math.Div(V.local.iLnTotRunQty,V.local.iLnRun,V.Local.iLnTempRunQty)
+								
+								F.Intrinsic.Control.If(V.Local.iLnTempRunQty,>,0)
+									F.Intrinsic.Math.Div(V.Local.fHActual,V.Local.iLnTempRunQty,V.Local.fDActual)
+									F.Intrinsic.Math.Div(V.Local.fHEstimated,V.Local.iLnTempRunQty,V.Local.fDEstimated)
+								F.Intrinsic.Control.EndIf
+								
+							F.Intrinsic.Control.EndIf
+							
+						F.Intrinsic.Control.EndIf
+						
+						F.Data.DataTable.SetValue("ReportTable",V.DataTable.ReportTable.RowCount--,"ActLabor",V.Local.fDActual,"EstLabor",V.Local.fDEstimated)
+						V.Local.fDEstimated.Set(0)
+						V.Local.fDActual.Set(0)
+						V.Local.fHEstimated.Set(0)
+						V.Local.fHActual.Set(0)
+						V.local.iLnRun.Set(0)
+						
+				F.Intrinsic.Control.EndIf
+	
+				V.Local.sWcenter.Set(V.ODBC.conx!rstOP.FieldValTrim!Workcenter)
+				V.Local.sLMO.Set(V.ODBC.conx!rstOP.FieldValTrim!LMO)
+
+				F.Intrinsic.String.IsInString(V.Local.sWcenter,"PAINT LINE",True,V.Local.bPaint)
+				V.Local.sPLine.Set(V.ODBC.conx!rstOP.FieldValtrim!Product_Line)
+				
+				F.Intrinsic.Control.If(V.ODBC.conx!rstOP.FieldValtrim!Flag_Setup,=,"Y")
+					V.Local.bFsetup.Set(True)
+				F.Intrinsic.Control.Else
+					V.Local.bFsetup.Set(False)
+				F.Intrinsic.Control.EndIf
+	
+				V.Local.sDesc.Set(V.ODBC.conx!rstOP.FieldValtrim!Workcenter)
+				F.Intrinsic.String.Replace(V.Local.sDesc,"'","''",V.Local.sDesc)
+				
+				'Retrieve rate and runtime estimates from the router sequence for the related job
+				F.Intrinsic.String.Build("SELECT Rate, (Set_Up+Run_Time) AS RunTime FROM V_Router_Line WHERE LTRIM(Router) = '{0}' AND LTRIM(Desc_RT_Line) = '{1}'",V.ODBC.conx!rstOP.FieldValtrim!router,V.Local.sDesc,V.Local.sSQL)
+				F.ODBC.Connection!conX.OpenLocalRecordsetRO("rstRou",V.Local.sSQL)
+				
+				F.Intrinsic.Control.If(V.ODBC.conX!rstRou.EOF,=,False)
+					V.Local.fHEstimated.set(V.ODBC.conx!rstRou.FieldValFloat!RunTime)
+					V.local.iLnRate.Set(V.ODBC.conx!rstRou.FieldValFloat!Rate)
+				F.Intrinsic.Control.EndIf
+				
+				F.ODBC.conx!rstRou.Close
+
+				V.local.iLnRun.Set(1)
+				
+				F.Intrinsic.Control.If(V.Local.bFsetup.Not)
+				
+					F.Intrinsic.Control.If(V.ODBC.conx!rstOP.FieldValFloat!qty_order,>,0)
+					F.Intrinsic.Control.AndIf(V.ODBC.conx!rstOP.FieldValFloat!Hours_Actual,>,0)
+						F.Intrinsic.Math.Div(V.ODBC.conx!rstOP.FieldValFloat!qty_order,V.ODBC.conx!rstOP.FieldValFloat!Hours_Actual,V.Local.fHActual)
+					F.Intrinsic.Control.EndIf
+					
+				F.Intrinsic.Control.Else
+					F.Intrinsic.Math.Add(V.ODBC.conx!rstOP.FieldValFloat!Hours_Actual,V.Local.fHActual,V.Local.fHActual)
+				F.Intrinsic.Control.EndIf
+	
+			F.Intrinsic.Control.Else
+				F.Intrinsic.Control.If(V.Local.bFsetup.Not)
+				
+					F.Intrinsic.Control.If(V.ODBC.conx!rstOP.FieldValFloat!qty_order,>,0)
+					F.Intrinsic.Control.AndIf(V.ODBC.conx!rstOP.FieldValFloat!Hours_Actual,>,0)
+						F.Intrinsic.Math.Div(V.ODBC.conx!rstOP.FieldValFloat!qty_order,V.ODBC.conx!rstOP.FieldValFloat!Hours_Actual,V.Local.fHTemp)
+						F.Intrinsic.Math.Add(V.Local.fHTemp,V.Local.fHActual,V.Local.fHActual)
+					F.Intrinsic.Control.EndIf
+					
+				F.Intrinsic.Control.Else
+					F.Intrinsic.Math.Add(V.ODBC.conx!rstOP.FieldValFloat!Hours_Actual,V.Local.fHActual,V.Local.fHActual)
+				F.Intrinsic.Control.EndIf
+					
+				F.Intrinsic.Math.Add(V.local.iLnRun,1,V.local.iLnRun)
+			F.Intrinsic.Control.EndIf
+			
+		F.ODBC.conx!rstOP.MoveNext
+		F.Intrinsic.Control.Loop
+		
+		F.ODBC.conx!rstOP.Close
+		
+		'If sWcenter is blank here it means there were no Job Details for the report header row from the exploded BOM.
+		F.Intrinsic.Control.If(V.Local.sWcenter,<>,"")
+			F.Data.DataTable.AddRow("ReportTable","WCenter",V.Local.sWcenter,"EstHour",V.Local.fHEstimated)
+			
+			F.Intrinsic.Control.If(V.Local.fHActual,>,0)
+				F.Intrinsic.Math.Div(V.Local.fHActual,V.local.iLnRun,V.Local.fHActual)
+				F.Data.DataTable.SetValue("ReportTable",V.DataTable.ReportTable.RowCount--,"ActHour",V.Local.fHActual)
+			F.Intrinsic.Control.Else
+				F.Data.DataTable.SetValue("ReportTable",V.DataTable.ReportTable.RowCount--,"ActHour",0)
+			F.Intrinsic.Control.EndIf
+	
+			F.Intrinsic.Control.If(V.Local.bFsetup)
+				F.Intrinsic.Control.If(V.Local.bPaint)
+					F.Intrinsic.Math.Mult(V.local.iLnRate,V.Local.fHEstimated,V.Local.fHEstimated)
+					F.Intrinsic.Math.Mult(V.local.iLnRate,V.Local.fHActual,V.Local.fHActual)
+					
+				F.Intrinsic.Control.ElseIf(V.Local.sPLine,=,"SP","OR",V.Local.sPLine,=,"SW")
+					F.Intrinsic.Math.Mult(85,V.Local.fHEstimated,V.Local.fHEstimated)
+					F.Intrinsic.Math.Mult(85,V.Local.fHActual,V.Local.fHActual)
+					
+				F.Intrinsic.Control.Else
+					F.Intrinsic.String.IsInString("PFPWPO",V.Local.sPLine,True,V.Local.bRet)
+					
+					F.Intrinsic.Control.If(V.Local.bRet)
+						F.Intrinsic.Math.Mult(55,V.Local.fHEstimated,V.Local.fHEstimated)
+						F.Intrinsic.Math.Mult(55,V.Local.fHActual,V.Local.fHActual)
+					F.Intrinsic.Control.EndIf
+					
+				F.Intrinsic.Control.EndIf
+				
+			F.Intrinsic.Control.Else
+				F.Intrinsic.Control.If(V.Local.sPLine,=,"SP")
+					F.Intrinsic.Control.If(V.Local.sLMO,=,"O")
+						V.Local.fDEstimated.Set(V.local.iLnRate)
+					F.Intrinsic.Control.Else
+					
+						F.Intrinsic.Control.If(V.Local.bPaint)
+							V.Local.iValue.set(V.local.iLnRate)
+						F.Intrinsic.Control.Else 
+							V.Local.iValue.set(85)
+						F.Intrinsic.Control.EndIf
+							
+						F.Intrinsic.Control.If(V.Local.fHEstimated,>,0)
+							F.Intrinsic.Math.Div(V.Local.iValue,V.Local.fHEstimated,V.Local.fDEstimated)
+							f.Intrinsic.Math.Mult(V.Local.fDEstimated,V.Local.sRet(6).Float,V.Local.fDEstimated)
+						F.Intrinsic.Control.EndIf
+						
+					F.Intrinsic.Control.EndIf
+	
+					F.Intrinsic.Control.If(V.Local.fHActual,>,0)
+						F.Intrinsic.Math.Div(V.Local.iValue,V.Local.fHActual,V.Local.fDActual)
+						f.Intrinsic.Math.Mult(V.Local.fDActual,V.Local.sRet(6).Float,V.Local.fDActual)
+					F.Intrinsic.Control.EndIf
+					
+				F.Intrinsic.Control.Else
+					F.Intrinsic.String.IsInString("PFPWPO",V.Local.sPLine,True,V.Local.bRet)
+					
+					F.Intrinsic.Control.If(V.Local.bPaint)
+						V.Local.iValue.set(V.local.iLnRate)
+					F.Intrinsic.Control.ElseIf(V.Local.bRet)
+						V.Local.iValue.set(55)
+					F.Intrinsic.Control.Else
+						F.Intrinsic.String.IsInString("SFSWSO",V.Local.sPLine,True,V.Local.bRet)
+						
+						F.Intrinsic.Control.If(V.Local.bRet)
+							V.Local.iValue.set(85)
+						F.Intrinsic.Control.EndIf
+							
+					F.Intrinsic.Control.EndIf
+					
+					F.Intrinsic.String.IsInString("PFPWPOSWSF",V.Local.sPLine,True,V.Local.bRet)
+					
+					F.Intrinsic.Control.If(V.Local.bRet)
+						F.Intrinsic.Control.If(V.Local.sLMO,=,"O")
+							V.Local.fDEstimated.Set(V.local.iLnRate)
+							V.Local.iValue.set(0)						
+						F.Intrinsic.Control.Else
+						
+							F.Intrinsic.Control.If(V.Local.fHEstimated,>,0)
+								F.Intrinsic.Math.Div(V.Local.iValue,V.Local.fHEstimated,V.Local.fDEstimated)
+								f.Intrinsic.Math.Mult(V.Local.fDEstimated,V.Local.sRet(6).Float,V.Local.fDEstimated)
+							F.Intrinsic.Control.EndIf
+							
+						F.Intrinsic.Control.EndIf
+	
+						F.Intrinsic.Control.If(V.Local.fHActual,>,0)
+							F.Intrinsic.Math.Div(V.Local.iValue,V.Local.fHActual,V.Local.fDActual)
+							f.Intrinsic.Math.Mult(V.Local.fDActual,V.Local.sRet(6).Float,V.Local.fDActual)
+						F.Intrinsic.Control.EndIf
+						
+					F.Intrinsic.Control.EndIf
+						
+				F.Intrinsic.Control.EndIf
+				
+			F.Intrinsic.Control.EndIf
+			
+			F.Intrinsic.Control.If(V.Local.bFsetup)
+				F.Intrinsic.Control.If(V.Local.iLnRun,>,0)
+				
+					F.Intrinsic.Math.Div(V.local.iLnTotRunQty,V.local.iLnRun,V.Local.iLnTempRunQty)
+				
+					F.Intrinsic.Control.If(V.Local.iLnTempRunQty,>,0)
+						F.Intrinsic.Math.Div(V.Local.fHActual,V.Local.iLnTempRunQty,V.Local.fDActual)
+						F.Intrinsic.Math.Div(V.Local.fHEstimated,V.Local.iLnTempRunQty,V.Local.fDEstimated)
+					F.Intrinsic.Control.EndIf
+					
+				F.Intrinsic.Control.EndIf
+				
+			F.Intrinsic.Control.EndIf
+			
+			F.Data.DataTable.SetValue("ReportTable",V.DataTable.ReportTable.RowCount--,"ActLabor",V.Local.fDActual,"EstLabor",V.Local.fDEstimated)
+	
+		F.Intrinsic.Control.EndIf
+		
+		V.Local.sWcenter.Set("")
+		V.Local.bPaint.Set(False)
+		V.Local.fDEstimated.Set(0)
+		V.Local.fDActual.Set(0)
+		V.Local.fHEstimated.Set(0)
+		V.Local.fHActual.Set(0)
+		V.local.iLnRun.Set(0)
+	F.Intrinsic.Control.Next(V.Local.iC)
+	
+	F.Intrinsic.String.Build("{0}//{1}",V.Local.lGood,V.Local.lScrap,V.Local.sGoodBad)
+	F.Data.DataTable.SetValue("ReportTable",0,"ScrapGB",V.Local.sGoodBad)
+	
+	F.Intrinsic.Control.If(V.DataTable.ReportTable.RowCount,>,0)
+		F.Data.DataTable.SaveToDB("ReportTable","conX","GCG_3549_Job_EstAct","ID",1)
+	F.Intrinsic.Control.EndIf
+	
+	F.Intrinsic.Control.If(V.DataTable.ScrapTable.RowCount,>,0)
+		F.Data.DataTable.SaveToDB("ScrapTable","conX","GCG_3549_Job_Scrap","ID",1)
+	F.Intrinsic.Control.EndIf
+	
+	F.Global.BI.StopLogging(V.local.iBILogID)
+	
+	V.Local.sParams.Set("ActCost*!*EstCost*!*DateRange*!*Goodpart*!*Badpart")
+	
+	F.Intrinsic.String.Build("Date from : {0} to {1}",V.Screen.frmEA!dtfrom.Value,V.Screen.frmEA!dtTO.Value,V.Local.sRet)
+	
+	F.Intrinsic.String.Build("{0}*!*{1}*!*{2}*!*{3}*!*{4}",V.local.fActCost,V.local.fEstCost,V.Local.sRet,V.Local.lGood,V.Local.lScrap,V.Local.sValues)
+	
+	F.Intrinsic.UI.CloseWaitDialog
+	
+	F.Global.BI.RunReportPreProcessor(V.local.iBiRunID,V.local.iBILogID,V.Local.sParams,V.Local.sValues,"",-1,True,"",-1,"",-1,"","",V.Local.iRet)
+	
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(CatchError, "Sub", V.Ambient.CurrentSubroutine, "Error", V.Ambient.ErrorNumber, "ErrorDescription", V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.BuildBOM.End
+
+program.sub.cmdbrowse_click.start
+F.Intrinsic.Control.Try
+	V.Local.sRet.Declare(String)
+	
+	F.Intrinsic.UI.SetBrowserHotTypeAhead(True)
+	F.Intrinsic.UI.Browser(3000,"",V.Local.sRet)
+	
+	F.Intrinsic.Control.If(V.Local.sRet,<>,"***CANCEL***")
+		F.Intrinsic.String.Split(V.Local.sRet,"*!*",V.Local.sRet)
+		Gui.frmEA.txtPart.Text(V.Local.sRet(0).Trim)
+	F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(CatchError, "Sub", V.Ambient.CurrentSubroutine, "Error", V.Ambient.ErrorNumber, "ErrorDescription", V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+program.sub.cmdbrowse_click.End
+
+program.sub.cmdprocess_click.start
+F.Intrinsic.Control.Try
+
+	F.Intrinsic.UI.InvokeWaitDialog("Processing ...")
+	Gui.frmEA..Visible(False)
+	
+	F.Intrinsic.Control.CallSub(Buildbom)
+	
+	F.Intrinsic.Control.CallSub(Unload)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(CatchError, "Sub", V.Ambient.CurrentSubroutine, "Error", V.Ambient.ErrorNumber, "ErrorDescription", V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+program.sub.cmdprocess_click.End
+
+Program.Sub.GetMatData.Start
+F.Intrinsic.Control.Try
+	V.Local.sSQL.Declare(String)
+	V.Local.fConv.Declare(Float)
+	V.Local.fCost.Declare(Float)
+	
+	F.Intrinsic.String.Build("SELECT UM_Inventory, UM_Purchasing, Factor_Conversion FROM V_Inventory_Mstr WHERE LTRIM(Part) = '{0}'",V.Args.OPart,V.Local.sSQL)
+	F.ODBC.Connection!conX.OpenLocalRecordsetRO("rst1",V.Local.sSQL)
+	
+	F.Intrinsic.Control.If(V.ODBC.conX!rst1.EOF,=,False)
+	
+		F.Intrinsic.Control.If(V.ODBC.conx!rst1.FieldValtrim!UM_Purchasing,<>,"")
+		F.Intrinsic.Control.andIf(V.ODBC.conx!rst1.FieldValtrim!UM_Purchasing,<>,V.ODBC.conx!rst1.FieldValtrim!UM_Inventory)
+			V.Local.fConv.Set(V.ODBC.conx!rst1.FieldValFloat!Factor_Conversion)
+		F.Intrinsic.Control.Else
+			V.Local.fConv.Set(1)
+		F.Intrinsic.Control.EndIf
+		
+	F.Intrinsic.Control.EndIf
+	F.ODBC.conx!rst1.Close
+	
+	F.Intrinsic.String.Build("SELECT Cost FROM V_Inventory_Cost WHERE LTRIM(Part) ='{0}'",V.Args.OPart,V.Local.sSQL)
+	F.ODBC.Connection!conX.OpenLocalRecordsetRO("rst1",V.Local.sSQL)
+	
+	F.Intrinsic.Control.If(V.ODBC.conX!rst1.EOF,=,False)
+		F.Intrinsic.Math.Mult(V.ODBC.conx!rst1.FieldValFloat!Cost,V.Args.lQty,V.Local.fCost)
+		F.Data.DataTable.SetValue("ReportTable",V.DataTable.ReportTable.RowCount--,"MatWEIAverage",V.Local.fCost)
+	F.Intrinsic.Control.EndIf
+	F.ODBC.conx!rst1.Close
+	
+	
+	F.Intrinsic.String.Build("SELECT TOP 1 Cost FROM V_PO_History WHERE LTRIM(Part) = '{0}' AND Date_Received <> '1900-01-01' AND Qty_Received > 0 ORDER BY Date_Received DESC",V.Args.OPart,V.Local.sSQL)
+	F.ODBC.Connection!conX.OpenLocalRecordsetRO("rst1",V.Local.sSQL)
+	
+	F.Intrinsic.Control.If(V.ODBC.conX!rst1.EOF,=,False)
+		F.Intrinsic.Math.Div(V.ODBC.conx!rst1.FieldValFloat!cost,V.Local.fConv,V.Local.fCost)
+		F.Intrinsic.Math.Mult(V.Local.fCost,V.Args.lQty,V.Local.fCost)
+	F.Intrinsic.Control.EndIf
+	F.ODBC.conx!rst1.Close
+	
+	'if no purchase records. assigns MatWEIAverage
+	F.Data.DataTable.SetValue("ReportTable",V.DataTable.ReportTable.RowCount--,"MatRecCost",V.Local.fCost)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(CatchError, "Sub", V.Ambient.CurrentSubroutine, "Error", V.Ambient.ErrorNumber, "ErrorDescription", V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+Program.Sub.GetMatData.End
+
+program.sub.Unload.start
+F.Intrinsic.Control.Try
+
+	F.ODBC.Connection!conX.Close
+	F.Intrinsic.Control.End
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(CatchError, "Sub", V.Ambient.CurrentSubroutine, "Error", V.Ambient.ErrorNumber, "ErrorDescription", V.Ambient.ErrorDescription)
+F.Intrinsic.Control.EndTry
+program.sub.Unload.End
+
+Program.Sub.CatchError.Start
+F.Intrinsic.Control.Try
+	V.Local.sErrorMessage.Declare(String)
+	
+	F.Intrinsic.String.Build("Program: GCG_3549_EstActual.g2u{0}{0}Sub: {1}{0}Error: {2}{0}Error Description: {3}",V.Ambient.NewLine,V.Args.Sub,V.Args.Error,V.Args.ErrorDescription,V.Local.sErrorMessage)
+	F.Intrinsic.UI.Msgbox(V.Local.sErrorMessage,"Unhandled Error Occurred")
+	
+	F.Intrinsic.Control.If(V.Args.Sub.LCase,!=,"unload")
+		F.Intrinsic.Control.CallSub(Unload)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndIf
+	
+F.Intrinsic.Control.Catch
+	F.Intrinsic.UI.Msgbox("Fatal Error occurred in program GCG_3549_EstActual.g2u","Unhandled Error Occurred")
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry	
+Program.Sub.CatchError.End
+
+Program.Sub.Comments.Start
+${$0$}$EstimateActual.$}$RAN$}$1/13/2016$}$False
+${$3$}$0$}$$}$0$}$-1$}$$}$12:00:00 AM$}$
+Program.Sub.Comments.End
